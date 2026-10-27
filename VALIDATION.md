@@ -25,7 +25,7 @@
 
 This execution environment cannot reach `proxy.golang.org`, so `go test ./...` cannot download `github.com/alparslanahmed/huidu-led v0.1.7` and therefore cannot complete the controller-package compile here.
 
-The Docker build retains the normal `go mod download` step and will fetch the dependency when built on a host with internet access.
+The Dockerfile intentionally avoids a standalone `go mod download` step. The production image resolves the pinned dependency as part of `go build -mod=mod`, so Portainer does not fail in a separate pre-build dependency layer.
 
 ## Military-data note
 
@@ -48,4 +48,4 @@ Validated after adding the built-in `/display` page:
   - `/assets/operators/UAL.png` returned a 20×20 RGBA PNG.
 - Fixed a Go `http.ServeMux` runtime issue in the previous asset route pattern (`/{code}.png`); the new `{file}` route parses the `.png` suffix safely and starts correctly on modern Go.
 
-The real `huidu-led` module still cannot be downloaded in this execution environment because outbound Go module access is blocked; production Docker builds continue to use the pinned real dependency.
+The real `huidu-led` module still cannot be downloaded in this execution environment because outbound Go module access is blocked; production Docker builds continue to use the pinned real dependency, resolved during `go build -mod=mod`.

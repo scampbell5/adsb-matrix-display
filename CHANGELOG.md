@@ -1,3 +1,10 @@
+# Deployment fix v3
+
+- Removed the standalone `RUN go mod download` Docker layer that could fail before the existing `-mod=mod` workaround was reached.
+- Dependency resolution now happens only during `go build -mod=mod`.
+- Updated the builder image from Go 1.23 to Go 1.25 and set `GOTOOLCHAIN=local` to avoid an unexpected toolchain download during Portainer builds.
+- Kept `GOPROXY=https://proxy.golang.org|direct` so a proxy error can fall back to the module source.
+
 
 ## Deployment fix
 

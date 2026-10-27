@@ -112,7 +112,7 @@ API_TOKEN=<optional token>
 
 Leave `WF2_HOST` empty and `PUSH_ENABLED=false` until the physical display is configured and tested. Set `DISPLAY_NAME` privately in Portainer if you want custom station branding without committing it to Git.
 
-Deploy `docker-compose.yml` as a Portainer stack. The Docker build uses `-mod=mod` so the missing `go.sum` does not break a clean Portainer build, and it uses the Go module proxy with a direct-source fallback.
+Deploy `docker-compose.yml` as a Portainer stack. The Dockerfile intentionally does **not** run a separate `go mod download` layer. Module resolution happens during `go build -mod=mod`, using the public Go module proxy with a direct-source fallback. The builder uses Go 1.25 for compatibility with the current Huidu dependency.
 
 The API will be available at:
 
