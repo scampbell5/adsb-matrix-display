@@ -1,3 +1,14 @@
+## v7 - Carrier colors + flight-level gamification
+
+- Added LED-friendly carrier-inspired callsign colors for all bundled airline operators.
+- Added prefix-only callsign colors for Cape Air (`KAP`), FedEx (`FDX`), and UPS even when no dedicated logo asset is bundled.
+- Unknown/general-aviation callsigns use the UFO cyan; military callsigns use green.
+- Added proximity levels to distance/bearing: cyan (10+ NM), green (5-10), amber (2-5), orange (1-2), and magenta (<1 NM).
+- Added altitude color bands: orange (<1K ft), amber (1-5K), cyan (5-10K), violet (10K+).
+- Added speed color bands: white (<100 kt), green (100-250), cyan (250-400), violet (400+).
+- Kept the v6 14x14 UFO and simplified layout unchanged.
+- Added color-threshold and carrier-color regression tests.
+
 
 ## v6 - UFO asset polish
 

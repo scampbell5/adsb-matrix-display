@@ -42,7 +42,7 @@ The WF2 keeps its factory firmware. This service renders the entire screen image
   - U.S. Navy (`USN`)
   - U.S. Army (`USA`)
   - generic military (`MIL`)
-- Generic top-down aircraft icon for unknown/general-aviation traffic (`UNK`)
+- Playful 14×14 UFO icon for unknown/general-aviation traffic (`UNK`)
 - Airline/regional icons for UAL, DAL, AAL, SWA, JBU, ASA, NKS, FFT, AAY, ACA, RPA, EDV, ENY, JIA/PSA, SKW, and AWI
 - Browser/API preview of the exact 64×32 frame
 - Manual and automatic HD-WF2 pushes
@@ -344,9 +344,26 @@ The aircraft frame is intentionally restrained:
 - known aircraft show only the aircraft type on the secondary row; unknown aircraft leave it blank
 - distance, `NM`, bearing arrow, and direction share one compact cyan 3×5 row
 - altitude and speed use compact 3×5 fields on the bottom row (`6.1K FT`, `155 KT`)
-- the text palette is limited to white, cyan, and amber; operator artwork keeps its source colors
+- callsigns use LED-friendly carrier identity colors when the operator/prefix is known; GA/unknown callsigns use UFO cyan
+- distance/bearing is gamified by proximity: cyan (10+ NM), green (5–10), amber (2–5), orange (1–2), magenta (<1 NM)
+- altitude shifts from orange below 1,000 ft → amber below 5,000 → cyan below 10,000 → violet at 10,000+ ft
+- speed shifts from white below 100 kt → green below 250 → cyan below 400 → violet at 400+ kt
+- operator artwork keeps its source colors
 
-`design/operator_pixel_asset_preview.png` is a nearest-neighbor enlarged preview of the embedded source assets. `design/redesign_preview.png` shows enlarged examples of the final hybrid 64×32 layouts, including the restored UFO unknown-aircraft mark.
+`design/operator_pixel_asset_preview.png` is a nearest-neighbor enlarged preview of the embedded source assets. `design/redesign_preview.png` shows enlarged examples of the hybrid 64×32 layouts, including the UFO unknown-aircraft mark. `design/color_gamification_preview.png` shows the current carrier/proximity/altitude/speed color behavior.
+
+### Display color levels
+
+Color is used as information rather than decoration:
+
+| Field | Color behavior |
+| --- | --- |
+| Callsign | Carrier-inspired color where known; cyan for unknown/GA; green for military |
+| Distance + bearing | 10+ NM cyan; 5–10 green; 2–5 amber; 1–2 orange; under 1 NM magenta |
+| Altitude | under 1K orange; 1–5K amber; 5–10K cyan; 10K+ violet |
+| Speed | under 100 white; 100–250 green; 250–400 cyan; 400+ violet |
+
+The thresholds deliberately avoid adding new labels or gauges to the 64×32 frame: the existing numbers become the game-like status indicators.
 
 ## Controller library
 

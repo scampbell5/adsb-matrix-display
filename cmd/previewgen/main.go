@@ -25,6 +25,8 @@ func main() {
 		"military.png":  {Callsign: "AE1234", Type: "H60", OperatorCode: "MIL", OperatorName: "Military Aircraft", OperatorKind: skywatch.OperatorMilitary, Military: true, MilitaryBranch: "Unknown", LogoURL: "/assets/operators/MIL.png", Distance: "7.1NM", Direction: "S", Altitude: "2400FT", Speed: "135KT"},
 		"unknown.png":   {Callsign: "N1410A", Type: "", OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: skywatch.OperatorUnknown, LogoURL: "/assets/operators/UNK.png", Distance: "14.0NM", Direction: "NE", Altitude: "400FT", Speed: "85KT"},
 		"n380f.png":     {Callsign: "N380F", Type: "", OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: skywatch.OperatorUnknown, LogoURL: "/assets/operators/UNK.png", Distance: "7.7NM", Direction: "SE", Altitude: "6100FT", Speed: "155KT"},
+		"capeair.png":   {Callsign: "KAP2112", Type: "C402", OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: skywatch.OperatorUnknown, LogoURL: "/assets/operators/UNK.png", Distance: "6.8NM", Direction: "S", Altitude: "5600FT", Speed: "145KT"},
+		"overhead.png":  {Callsign: "N603NH", Type: "", OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: skywatch.OperatorUnknown, LogoURL: "/assets/operators/UNK.png", Distance: "0.7NM", Direction: "NW", Altitude: "800FT", Speed: "90KT"},
 		"idle.png":      {Callsign: "ADS-B MATRIX", OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: skywatch.OperatorUnknown, LogoURL: "/assets/operators/UNK.png", Distance: "NO POSITION", Idle: true, Fingerprint: "idle"},
 	}
 

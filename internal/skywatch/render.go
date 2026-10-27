@@ -20,11 +20,41 @@ const operatorIconSize = 16
 const unknownIconSize = 14
 
 var (
-	black = color.RGBA{0, 0, 0, 255}
-	white = color.RGBA{245, 248, 255, 255}
-	cyan  = color.RGBA{48, 210, 255, 255}
-	amber = color.RGBA{255, 190, 72, 255}
+	black   = color.RGBA{0, 0, 0, 255}
+	white   = color.RGBA{245, 248, 255, 255}
+	cyan    = color.RGBA{48, 210, 255, 255}
+	green   = color.RGBA{72, 232, 146, 255}
+	amber   = color.RGBA{255, 190, 72, 255}
+	orange  = color.RGBA{255, 128, 58, 255}
+	magenta = color.RGBA{255, 72, 164, 255}
+	violet  = color.RGBA{178, 112, 255, 255}
 )
+
+// carrierPalette uses bright, LED-friendly approximations of carrier identity
+// colors. They are intentionally tuned for readability on black rather than
+// attempting exact brand-color reproduction. Prefix-only entries let the
+// callsign pick up a carrier identity even before we add a dedicated logo.
+var carrierPalette = map[string]color.RGBA{
+	"DAL": {245, 55, 78, 255},
+	"UAL": {70, 155, 255, 255},
+	"AAL": {100, 205, 255, 255},
+	"SWA": {70, 150, 255, 255},
+	"JBU": {60, 190, 255, 255},
+	"ASA": {90, 180, 255, 255},
+	"NKS": {255, 224, 48, 255},
+	"FFT": {70, 225, 120, 255},
+	"AAY": {255, 150, 55, 255},
+	"RPA": {205, 110, 255, 255},
+	"EDV": {160, 120, 255, 255},
+	"ENY": {105, 205, 255, 255},
+	"JIA": {255, 86, 86, 255},
+	"SKW": {72, 210, 255, 255},
+	"AWI": {125, 185, 255, 255},
+	"ACA": {255, 70, 70, 255},
+	"KAP": {58, 198, 255, 255}, // Cape Air
+	"FDX": {190, 105, 255, 255},
+	"UPS": {255, 188, 60, 255},
+}
 
 func RenderFramePNG(model DisplayModel) ([]byte, error) {
 	img := image.NewRGBA(image.Rect(0, 0, FrameWidth, FrameHeight))
@@ -69,7 +99,7 @@ func RenderFramePNG(model DisplayModel) ([]byte, error) {
 				csX = 16
 			}
 		}
-		drawText5x7(set, csX, 1, cs, white)
+		drawText5x7(set, csX, 1, cs, callsignColor(model))
 
 		// Keep the secondary identity line intentionally minimal. The operator logo
 		// already identifies a known airline/branch, so only show the aircraft type
@@ -82,12 +112,13 @@ func RenderFramePNG(model DisplayModel) ([]byte, error) {
 			drawText3x5(set, csX, 10, typ, white)
 		}
 
-		// Navigation row is now one compact cyan sentence. Using the same 3x5
-		// treatment for the value and unit removes the visual noise of mixed sizes
-		// and preserves a clear gap before the bearing at the right edge.
+		// Navigation stays one compact sentence, while its color acts as a proximity
+		// level: tracked -> nearby -> close -> very close -> overhead. The arrow
+		// shares the same color so the whole navigation row reads as one signal.
 		distance := compactDistanceValue(model.Distance)
 		distanceText := distance + " NM"
-		drawText3x5(set, csX, 17, distanceText, cyan)
+		distanceColor := proximityColor(model.Distance)
+		drawText3x5(set, csX, 17, distanceText, distanceColor)
 
 		dir := strings.ToUpper(strings.TrimSpace(model.Direction))
 		if len(dir) > 2 {
@@ -95,8 +126,8 @@ func RenderFramePNG(model DisplayModel) ([]byte, error) {
 		}
 		if dir != "" && dir != "--" {
 			dirX := FrameWidth - textWidth3x5(dir)
-			drawDirectionArrow(set, dirX-7, 17, dir, cyan)
-			drawText3x5(set, dirX, 17, dir, cyan)
+			drawDirectionArrow(set, dirX-7, 17, dir, distanceColor)
+			drawText3x5(set, dirX, 17, dir, distanceColor)
 		}
 
 		// Bottom telemetry uses one compact font per field. This makes the callsign
@@ -106,14 +137,14 @@ func RenderFramePNG(model DisplayModel) ([]byte, error) {
 		if altX < 0 {
 			altX = 0
 		}
-		drawText3x5(set, altX, 26, altText, amber)
+		drawText3x5(set, altX, 26, altText, altitudeColor(model.Altitude))
 
 		speedText := compactSpeed(model.Speed)
 		speedX := 32 + (32-textWidth3x5(speedText))/2
 		if speedX < 32 {
 			speedX = 32
 		}
-		drawText3x5(set, speedX, 26, speedText, white)
+		drawText3x5(set, speedX, 26, speedText, speedColor(model.Speed))
 
 	}
 
@@ -187,6 +218,102 @@ func trimLabel(s string, max int) string {
 		s = s[:max]
 	}
 	return s
+}
+
+func callsignColor(model DisplayModel) color.RGBA {
+	code := strings.ToUpper(strings.TrimSpace(model.OperatorCode))
+	if c, ok := carrierPalette[code]; ok {
+		return c
+	}
+
+	// Some operators may not yet have a bundled logo/registry entry. Let a
+	// recognizable ICAO callsign prefix still carry its identity color.
+	cs := strings.ToUpper(strings.TrimSpace(model.Callsign))
+	if len(cs) >= 3 {
+		if c, ok := carrierPalette[cs[:3]]; ok {
+			return c
+		}
+	}
+
+	if model.OperatorKind == OperatorMilitary || model.Military {
+		return green
+	}
+	if model.OperatorKind == OperatorUnknown {
+		return cyan
+	}
+	return white
+}
+
+func proximityColor(s string) color.RGBA {
+	nm, ok := parseTelemetryNumber(s, "NM")
+	if !ok {
+		return cyan
+	}
+	switch {
+	case nm < 1:
+		return magenta // OVERHEAD
+	case nm < 2:
+		return orange // VERY CLOSE
+	case nm < 5:
+		return amber // CLOSE
+	case nm < 10:
+		return green // NEARBY
+	default:
+		return cyan // TRACKED
+	}
+}
+
+func altitudeColor(s string) color.RGBA {
+	s = strings.ToUpper(strings.TrimSpace(s))
+	if s == "GND" {
+		return magenta
+	}
+	feet, ok := parseTelemetryNumber(s, "FT")
+	if !ok {
+		return white
+	}
+	switch {
+	case feet < 1000:
+		return orange
+	case feet < 5000:
+		return amber
+	case feet < 10000:
+		return cyan
+	default:
+		return violet
+	}
+}
+
+func speedColor(s string) color.RGBA {
+	kt, ok := parseTelemetryNumber(s, "KT")
+	if !ok {
+		return white
+	}
+	switch {
+	case kt < 100:
+		return white
+	case kt < 250:
+		return green
+	case kt < 400:
+		return cyan
+	default:
+		return violet
+	}
+}
+
+func parseTelemetryNumber(s, unit string) (float64, bool) {
+	s = strings.ToUpper(strings.TrimSpace(s))
+	s = strings.ReplaceAll(s, " ", "")
+	s = strings.TrimSuffix(s, strings.ToUpper(unit))
+	if s == "" || s == "--" || s == "---" || s == "GND" {
+		return 0, false
+	}
+	if strings.HasSuffix(s, "K") {
+		v, err := strconv.ParseFloat(strings.TrimSuffix(s, "K"), 64)
+		return v * 1000, err == nil
+	}
+	v, err := strconv.ParseFloat(s, 64)
+	return v, err == nil
 }
 
 func compactDistanceValue(s string) string {
