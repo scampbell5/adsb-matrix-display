@@ -58,3 +58,10 @@
 - Updated 64×32 frame rendering to use operator assets.
 - Added USAF, generic military, and UFO unknown example frames.
 - Added classification/render tests.
+
+## 2026-10-27 - balanced 64x32 layout
+- Reduced unknown/UFO artwork to a true 14x14 render size; known operator logos render at 16x16.
+- Moved the callsign left to x=17 to visually pair it with the artwork.
+- Rebuilt the navigation row as distance + compact NM + bearing arrow/direction.
+- Rebuilt the bottom row with 5x7 altitude/speed values and compact 3x5 units.
+- Preserved the Portainer-safe Docker build with no standalone go mod download step.

@@ -16,7 +16,8 @@ import (
 const FrameWidth = 64
 const FrameHeight = 32
 
-const operatorIconSize = 18
+const operatorIconSize = 16
+const unknownIconSize = 14
 
 var (
 	black     = color.RGBA{0, 0, 0, 255}
@@ -44,18 +45,26 @@ func RenderFramePNG(model DisplayModel) ([]byte, error) {
 		drawCentered5x7(set, 13, line1, cyan)
 		drawCentered5x7(set, 22, line2, white)
 	} else {
-		if err := drawOperatorIcon(img, model.OperatorCode, 0, 0, operatorIconSize); err != nil {
+		// Keep artwork compact so the panel reads as an instrument rather than a logo card.
+		// Unknown/general-aviation aircraft use the UFO at 14x14; known operators get
+		// a slightly larger 16x16 mark.
+		iconSize := operatorIconSize
+		iconX, iconY := 0, 0
+		if model.OperatorKind == OperatorUnknown {
+			iconSize = unknownIconSize
+			iconX, iconY = 1, 1
+		}
+		if err := drawOperatorIcon(img, model.OperatorCode, iconX, iconY, iconSize); err != nil {
 			return nil, err
 		}
 
-		// Identity stays prominent without consuming the whole panel. Most callsigns
-		// start to the right of the 18 px operator art; exceptionally long callsigns
-		// shift a few pixels left so all eight characters can still fit.
+		// Callsign is the hero, but starts immediately after the compact artwork instead
+		// of floating on the far right. Eight characters still fit exactly at x=17.
 		cs := strings.ToUpper(strings.TrimSpace(model.Callsign))
 		if len(cs) > 8 {
 			cs = cs[:8]
 		}
-		csX := 20
+		csX := 17
 		if textWidth5x7(cs) > FrameWidth-csX {
 			csX = FrameWidth - textWidth5x7(cs)
 			if csX < 16 {
@@ -64,33 +73,26 @@ func RenderFramePNG(model DisplayModel) ([]byte, error) {
 		}
 		drawText5x7(set, csX, 1, cs, white)
 
-		// Use the small identity row only when it contains real information. Unknown
-		// aircraft no longer get a generic "AIRCRAFT" label. If we know the type,
-		// show it; airline/military flights can also show the compact operator label.
+		// A small context line is only used when we have real information. Unknown
+		// aircraft deliberately leave it blank so the UFO/callsign pair can breathe.
 		typ := strings.ToUpper(strings.TrimSpace(model.Type))
 		if len(typ) > 4 {
 			typ = typ[:4]
 		}
 		label := shortOperatorLabel(model)
-		identityX := csX
 		if label != "" {
-			drawText3x5(set, identityX, 10, label, muted)
+			drawText3x5(set, csX, 9, label, muted)
 		}
 		if typ != "" {
-			typeX := identityX
-			if label != "" {
-				typeX = FrameWidth - textWidth3x5(typ)
-			}
-			drawText3x5(set, typeX, 10, typ, cyanMuted)
+			typeX := FrameWidth - textWidth3x5(typ)
+			drawText3x5(set, typeX, 9, typ, cyanMuted)
 		}
 
-		// Distance + bearing form one compact navigation row. The value remains easy
-		// to read, while the smaller unit and direction keep it subordinate to the
-		// aircraft identity.
+		// Navigation row: distance is medium-sized and aligned with the callsign.
+		// Direction is tucked against the right edge with a tiny bearing arrow.
 		distance := compactDistanceValue(model.Distance)
-		distanceX := 1
-		distanceEnd := drawText5x7(set, distanceX, 18, distance, cyan)
-		drawText3x5(set, distanceEnd+1, 20, "NM", cyanMuted)
+		distanceEnd := drawText5x7(set, csX, 16, distance, cyan)
+		drawText3x5(set, distanceEnd+1, 18, "NM", cyanMuted)
 
 		dir := strings.ToUpper(strings.TrimSpace(model.Direction))
 		if len(dir) > 2 {
@@ -98,14 +100,28 @@ func RenderFramePNG(model DisplayModel) ([]byte, error) {
 		}
 		if dir != "" && dir != "--" {
 			dirX := FrameWidth - textWidth3x5(dir)
-			drawDirectionArrow(set, dirX-7, 20, dir, cyan)
-			drawText3x5(set, dirX, 20, dir, cyan)
+			drawDirectionArrow(set, dirX-7, 18, dir, cyan)
+			drawText3x5(set, dirX, 18, dir, cyan)
 		}
 
-		// Bottom telemetry is deliberately simple: altitude left, speed right.
-		drawText3x5(set, 0, 27, compactAltitude(model.Altitude), amber)
-		speed := compactSpeed(model.Speed)
-		drawText3x5(set, FrameWidth-textWidth3x5(speed), 27, speed, white)
+		// Bottom row uses large values with compact units. This is easier to scan on
+		// the physical P4 panel than a full 3x5 telemetry sentence.
+		altValue, altUnit := compactAltitudeParts(model.Altitude)
+		altEnd := drawText5x7(set, 1, 25, altValue, amber)
+		if altUnit != "" {
+			drawText3x5(set, altEnd+1, 27, altUnit, amber)
+		}
+
+		speedValue, speedUnit := compactSpeedParts(model.Speed)
+		speedWidth := textWidth5x7(speedValue)
+		if speedUnit != "" {
+			speedWidth += 1 + textWidth3x5(speedUnit)
+		}
+		speedX := FrameWidth - speedWidth
+		speedEnd := drawText5x7(set, speedX, 25, speedValue, white)
+		if speedUnit != "" {
+			drawText3x5(set, speedEnd+1, 27, speedUnit, white)
+		}
 
 	}
 
@@ -197,6 +213,25 @@ func compactDistanceValue(s string) string {
 		return "--"
 	}
 	return s
+}
+
+func compactAltitudeParts(s string) (string, string) {
+	full := compactAltitude(s)
+	if full == "GND" {
+		return "GND", ""
+	}
+	if strings.HasSuffix(full, " FT") {
+		return strings.TrimSuffix(full, " FT"), "FT"
+	}
+	return full, ""
+}
+
+func compactSpeedParts(s string) (string, string) {
+	full := compactSpeed(s)
+	if strings.HasSuffix(full, " KT") {
+		return strings.TrimSuffix(full, " KT"), "KT"
+	}
+	return full, ""
 }
 
 func compactAltitude(s string) string {
