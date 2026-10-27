@@ -9,8 +9,10 @@
 - Branch classification from conservative callsign heuristics tested.
 - 64×32 commercial render tested.
 - 64×32 military render tested.
-- All runtime operator assets are exactly 20×20 PNGs.
+- All runtime operator source assets are exactly 20×20 PNGs.
+- The frame renderer scales operator artwork to a crisp 15×15 nearest-neighbor footprint.
 - Example commercial, military, unknown, and idle frames were regenerated from the current renderer.
+- Updated telemetry formatting uses explicit units (`6.1K FT`, `155 KT`) and the distance/bearing row uses an 8-way pixel arrow.
 - Huidu controller API usage was checked against the current upstream project documentation/source for:
   - `UploadFileData`
   - `FileTypeImage`

@@ -9,7 +9,8 @@ import (
 
 // Operator icons are original, pixel-friendly identifier marks made for this
 // project. Every icon is exactly 20x20 RGBA and is intended for the 64x32
-// matrix renderer.
+// matrix renderer. The renderer currently displays them at 15x15 using
+// nearest-neighbor sampling so the logo remains crisp while leaving more room for data.
 //
 //go:embed operators/*.png
 var operatorFS embed.FS

@@ -11,8 +11,8 @@ services:
       TZ: "${TZ:-UTC}"
       DISPLAY_NAME: "${DISPLAY_NAME:-ADS-B Matrix}"
 
-      # PiAware/dump1090 source. Because this service joins adsb-net,
-      # it can resolve the existing PiAware container as "piaware".
+      # PiAware/dump1090 source. Because this service joins the configured
+      # ADS-B network, it can resolve the existing PiAware container by name.
       PIAWARE_URL: "${PIAWARE_URL:-http://piaware:8080/data/aircraft.json}"
       RECEIVER_LAT: "${RECEIVER_LAT}"
       RECEIVER_LON: "${RECEIVER_LON}"

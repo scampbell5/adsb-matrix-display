@@ -1,4 +1,23 @@
+
+## Deployment fix
+
+- Restored the Portainer-safe Docker build command using `go build -mod=mod`.
+- Restored `GOPROXY=https://proxy.golang.org|direct` for resilient module resolution.
+- Restored configurable `HOST_PORT`, `PIAWARE_URL`, and external `ADSB_NETWORK` values in Compose.
 # Changelog
+
+## 2026-10-27 — 64×32 display polish
+
+- Reworked the aircraft frame around a stronger visual hierarchy for the physical P4 panel.
+- Reduced operator artwork from a 20×20 on-screen footprint to a crisp 15×15 nearest-neighbor render.
+- Made the callsign the primary white identity field and preserved up to eight characters at full 5×7 size.
+- Added a compact operator/type identity row.
+- Promoted distance and bearing to the middle row and replaced the decorative dash with a real 8-way direction arrow.
+- Replaced compressed altitude text such as `6.1KF` with explicit units such as `6.1K FT`.
+- Right-aligned speed as an explicit `KT` field.
+- Replaced the UFO unknown mark with a generic top-down aircraft icon.
+- Reworked the idle frame with centered branding and the generic aircraft mark.
+- Updated example frames and design previews, including a comparison-friendly `N380F` unknown-aircraft sample.
 
 ## Browser display simulator
 

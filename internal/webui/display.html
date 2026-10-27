@@ -66,7 +66,7 @@
   <main class="app">
     <header>
       <div>
-        <div class="eyebrow" id="displayName">ADS-B Matrix</div>
+        <div class="eyebrow" id="brandName">ADS-B Matrix</div>
         <h1>LED Display Simulator</h1>
       </div>
       <div class="statusline">
@@ -122,6 +122,7 @@
   const pauseBtn = document.getElementById('pauseBtn');
   const gridBtn = document.getElementById('gridBtn');
   const fullBtn = document.getElementById('fullBtn');
+  const brandName = document.getElementById('brandName');
   let paused = false;
   let grid = true;
 
@@ -137,10 +138,11 @@
         fetch('/api/v1/aircraft/military', {cache:'no-store'})
       ]);
       const status = await statusRes.json();
+      if (status.display_name) {
+        brandName.textContent = status.display_name;
+        document.title = status.display_name + ' · LED Display Simulator';
+      }
       const militaryData = aircraftRes.ok ? await aircraftRes.json() : {count:0};
-      const configuredName = status.display_name || 'ADS-B Matrix';
-      document.getElementById('displayName').textContent = configuredName;
-      document.title = configuredName + ' — LED Display Preview';
       const svc = status.service || {};
       const d = svc.display || {};
       const n = svc.nearest || null;

@@ -14,12 +14,12 @@ import (
 	"syscall"
 	"time"
 
-	assetpkg "example.com/adsb-matrix-display/internal/assets"
-	"example.com/adsb-matrix-display/internal/config"
-	"example.com/adsb-matrix-display/internal/controller"
-	"example.com/adsb-matrix-display/internal/service"
-	"example.com/adsb-matrix-display/internal/skywatch"
-	"example.com/adsb-matrix-display/internal/webui"
+	assetpkg "adsb-matrix-display/internal/assets"
+	"adsb-matrix-display/internal/config"
+	"adsb-matrix-display/internal/controller"
+	"adsb-matrix-display/internal/service"
+	"adsb-matrix-display/internal/skywatch"
+	"adsb-matrix-display/internal/webui"
 )
 
 func main() {
@@ -30,7 +30,7 @@ func main() {
 
 	var ctl *controller.Huidu
 	if cfg.WF2Host != "" {
-		ctl = controller.New(cfg.WF2Host, cfg.WF2Port, cfg.WF2Timeout, cfg.DisplayName)
+		ctl = controller.New(cfg.WF2Host, cfg.WF2Port, cfg.WF2Timeout)
 		defer ctl.Close()
 	}
 
@@ -63,7 +63,7 @@ func main() {
 		writeJSON(w, code, map[string]any{"status": status, "piaware_error": st.LastPollError, "controller": svc.ControllerStatus()})
 	})
 	mux.HandleFunc("GET /api/v1/status", func(w http.ResponseWriter, r *http.Request) {
-		writeJSON(w, http.StatusOK, map[string]any{"display_name": cfg.DisplayName, "service": svc.Snapshot(), "controller": svc.ControllerStatus(), "auto_push_enabled": cfg.PushEnabled})
+		writeJSON(w, http.StatusOK, map[string]any{"service": svc.Snapshot(), "controller": svc.ControllerStatus(), "auto_push_enabled": cfg.PushEnabled, "display_name": cfg.DisplayName})
 	})
 	mux.HandleFunc("GET /api/v1/aircraft", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, map[string]any{"aircraft": svc.Aircraft()})

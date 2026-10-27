@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"example.com/adsb-matrix-display/internal/config"
-	"example.com/adsb-matrix-display/internal/controller"
-	"example.com/adsb-matrix-display/internal/skywatch"
+	"adsb-matrix-display/internal/config"
+	"adsb-matrix-display/internal/controller"
+	"adsb-matrix-display/internal/skywatch"
 )
 
 type State struct {
@@ -44,7 +44,7 @@ func New(cfg config.Config, ctl *controller.Huidu) *Service {
 		cfg:        cfg,
 		controller: ctl,
 		httpClient: &http.Client{Timeout: cfg.PiAwareTimeout},
-		state:      State{Display: skywatch.BuildDisplay(nil, cfg.DisplayName)},
+		state:      State{Display: skywatch.BuildDisplayWithName(nil, cfg.DisplayName)},
 	}
 }
 
@@ -102,7 +102,7 @@ func (s *Service) pollOnce(ctx context.Context) {
 		IncludeGround:  s.cfg.IncludeGround,
 	})
 	now := time.Now()
-	display := skywatch.BuildDisplay(nearest, s.cfg.DisplayName)
+	display := skywatch.BuildDisplayWithName(nearest, s.cfg.DisplayName)
 
 	s.mu.Lock()
 	s.aircraft = eligible

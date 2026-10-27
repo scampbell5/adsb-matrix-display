@@ -1,4 +1,4 @@
-# ADS-B Matrix Display Display
+# ADS-B Matrix Display
 
 A small Go service for a 64×32 RGB LED aircraft display driven by a Huidu HD-WF2 controller.
 
@@ -42,7 +42,7 @@ The WF2 keeps its factory firmware. This service renders the entire screen image
   - U.S. Navy (`USN`)
   - U.S. Army (`USA`)
   - generic military (`MIL`)
-- Fun UFO-style unknown icon (`UNK`)
+- Generic top-down aircraft icon for unknown/general-aviation traffic (`UNK`)
 - Airline/regional icons for UAL, DAL, AAL, SWA, JBU, ASA, NKS, FFT, AAY, ACA, RPA, EDV, ENY, JIA/PSA, SKW, and AWI
 - Browser/API preview of the exact 64×32 frame
 - Manual and automatic HD-WF2 pushes
@@ -61,7 +61,6 @@ The WF2 keeps its factory firmware. This service renders the entire screen image
 │   ├── server/
 │   └── previewgen/
 ├── design/
-│   ├── concept_airline_military_grid.png
 │   └── operator_pixel_asset_preview.png
 ├── examples/
 │   └── frames/
@@ -96,9 +95,14 @@ The service resolves your PiAware container as `piaware` using:
 http://piaware:8080/data/aircraft.json
 ```
 
-Set these Portainer stack environment variables:
+Set these Portainer stack environment variables (the first three are optional overrides):
 
 ```text
+HOST_PORT=8095
+ADSB_NETWORK=adsb-net
+PIAWARE_URL=http://piaware:8080/data/aircraft.json
+DISPLAY_NAME=ADS-B Matrix
+TZ=UTC
 RECEIVER_LAT=<receiver latitude>
 RECEIVER_LON=<receiver longitude>
 WF2_HOST=
@@ -106,9 +110,9 @@ PUSH_ENABLED=false
 API_TOKEN=<optional token>
 ```
 
-Leave `WF2_HOST` empty and `PUSH_ENABLED=false` until the physical display is configured and tested.
+Leave `WF2_HOST` empty and `PUSH_ENABLED=false` until the physical display is configured and tested. Set `DISPLAY_NAME` privately in Portainer if you want custom station branding without committing it to Git.
 
-Deploy `docker-compose.yml` as a Portainer stack.
+Deploy `docker-compose.yml` as a Portainer stack. The Docker build uses `-mod=mod` so the missing `go.sum` does not break a clean Portainer build, and it uses the Go module proxy with a direct-source fallback.
 
 The API will be available at:
 
@@ -332,10 +336,22 @@ POST /api/v1/controller/screen?state=off
 
 ## Pixel assets
 
-Every runtime icon in `internal/assets/operators/` is a true 20×20 RGBA PNG. The frame renderer places the icon directly into the left 20 pixels of the 64×32 frame without resampling.
+Every runtime icon in `internal/assets/operators/` remains a true 20×20 RGBA PNG source asset. The 64×32 renderer now downsizes the selected icon to a crisp 15×15 nearest-neighbor mark so aircraft identity no longer consumes nearly one-third of the screen width.
 
-`design/operator_pixel_asset_preview.png` is a nearest-neighbor enlarged preview of the actual embedded runtime assets.
+The aircraft frame is intentionally hierarchical:
+
+- callsign is the primary 5×7 field
+- operator/type sits on a compact secondary row
+- distance and bearing get the larger middle row
+- altitude and speed share a small explicit-unit telemetry strip (`6.1K FT`, `155 KT`)
+- bearing uses a directional pixel arrow instead of a decorative dash line
+
+`design/operator_pixel_asset_preview.png` is a nearest-neighbor enlarged preview of the embedded source assets. `design/redesign_preview.png` shows enlarged examples of the updated 64×32 layouts.
 
 ## Controller library
 
 The controller package uses `github.com/alparslanahmed/huidu-led` and communicates with the HD-WF2 using Huidu SDK 2.0 over TCP port 10001. The rendered frame is uploaded as an in-memory PNG and referenced by a fullscreen image program.
+
+## Public-repository privacy
+
+This repository intentionally contains no receiver coordinates, controller IP, API token, feeder ID, or station-specific branding. Configure private deployment values through Portainer or an untracked `.env` file. Set `DISPLAY_NAME` privately if you want a custom station name on the idle screen and simulator UI.

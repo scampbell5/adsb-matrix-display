@@ -98,3 +98,25 @@ func drawText3x5(setPixel func(int, int, color.Color), x, y int, text string, c 
 	}
 	return cx
 }
+
+func textWidth5x7(text string) int {
+	n := 0
+	for range text {
+		n++
+	}
+	if n == 0 {
+		return 0
+	}
+	return n*6 - 1
+}
+
+func textWidth3x5(text string) int {
+	n := 0
+	for range text {
+		n++
+	}
+	if n == 0 {
+		return 0
+	}
+	return n*4 - 1
+}

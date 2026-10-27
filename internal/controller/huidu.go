@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"example.com/adsb-matrix-display/internal/skywatch"
+	"adsb-matrix-display/internal/skywatch"
 	huidu "github.com/alparslanahmed/huidu-led"
 )
 
@@ -22,20 +22,16 @@ type Status struct {
 }
 
 type Huidu struct {
-	mu          sync.Mutex
-	host        string
-	port        int
-	timeout     time.Duration
-	displayName string
-	device      *huidu.Device
-	status      Status
+	mu      sync.Mutex
+	host    string
+	port    int
+	timeout time.Duration
+	device  *huidu.Device
+	status  Status
 }
 
-func New(host string, port int, timeout time.Duration, displayName string) *Huidu {
-	if displayName == "" {
-		displayName = "ADS-B Matrix"
-	}
-	return &Huidu{host: host, port: port, timeout: timeout, displayName: displayName, status: Status{Configured: host != "", Host: host, Port: port}}
+func New(host string, port int, timeout time.Duration) *Huidu {
+	return &Huidu{host: host, port: port, timeout: timeout, status: Status{Configured: host != "", Host: host, Port: port}}
 }
 
 func (h *Huidu) Status() Status {
@@ -113,7 +109,7 @@ func (h *Huidu) Push(model skywatch.DisplayModel) error {
 	}
 
 	screen := huidu.NewScreen()
-	prog := screen.AddProgramWithConfig(huidu.ProgramConfig{Name: h.displayName, Realtime: true})
+	prog := screen.AddProgramWithConfig(huidu.ProgramConfig{Name: "ADS-B Matrix", Realtime: true})
 	area := prog.AddArea(0, 0, skywatch.FrameWidth, skywatch.FrameHeight)
 	area.AddImage(frameName, huidu.ImageConfig{Fit: huidu.ImageFitStretch})
 

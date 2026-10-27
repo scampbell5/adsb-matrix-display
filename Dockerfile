@@ -1,4 +1,4 @@
-FROM golang:1.25-alpine AS build
+FROM golang:1.23-alpine AS build
 RUN apk add --no-cache ca-certificates git
 WORKDIR /src
 
@@ -9,9 +9,7 @@ ENV GOPROXY=https://proxy.golang.org|direct
 COPY go.mod ./
 RUN go mod download
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -mod=mod \
-    -trimpath -ldflags='-s -w' \
-    -o /out/adsb-matrix-display ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux go build -mod=mod -trimpath -ldflags='-s -w' -o /out/adsb-matrix-display ./cmd/server
 
 FROM alpine:3.20
 RUN apk add --no-cache ca-certificates tzdata

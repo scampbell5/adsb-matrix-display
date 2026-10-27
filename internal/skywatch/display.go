@@ -7,7 +7,6 @@ import (
 )
 
 type DisplayModel struct {
-	DisplayName    string       `json:"display_name"`
 	Callsign       string       `json:"callsign"`
 	Type           string       `json:"type"`
 	OperatorCode   string       `json:"operator_code"`
@@ -29,14 +28,18 @@ type DisplayModel struct {
 	Fingerprint string `json:"fingerprint"`
 }
 
-func BuildDisplay(a *Aircraft, displayName string) DisplayModel {
-	displayName = strings.TrimSpace(displayName)
-	if displayName == "" {
-		displayName = "ADS-B Matrix"
-	}
+func BuildDisplay(a *Aircraft) DisplayModel {
+	return BuildDisplayWithName(a, "ADS-B Matrix")
+}
+
+func BuildDisplayWithName(a *Aircraft, displayName string) DisplayModel {
 	if a == nil {
+		displayName = strings.TrimSpace(displayName)
+		if displayName == "" {
+			displayName = "ADS-B Matrix"
+		}
 		return DisplayModel{
-			DisplayName: displayName, Callsign: displayName, OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: OperatorUnknown,
+			Callsign: strings.ToUpper(displayName), OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: OperatorUnknown,
 			OperatorICAO: "UNK", AirlineName: "Unknown", LogoURL: "/assets/operators/UNK.png",
 			Distance: "NO POSITION", Idle: true, Fingerprint: "idle",
 		}
@@ -79,7 +82,7 @@ func BuildDisplay(a *Aircraft, displayName string) DisplayModel {
 	fp := fmt.Sprintf("%s|%s|%s|%.1f|%s|%d|%d", callsign, typ, a.OperatorCode, distanceBucket, a.Direction, altitudeBucket, speedBucket)
 
 	return DisplayModel{
-		DisplayName: displayName, Callsign: callsign, Type: typ,
+		Callsign: callsign, Type: typ,
 		OperatorCode: a.OperatorCode, OperatorName: a.OperatorName, OperatorKind: a.OperatorKind,
 		Military: a.Military, MilitaryBranch: a.MilitaryBranch, LogoURL: a.LogoURL,
 		OperatorICAO: a.OperatorCode, AirlineName: a.OperatorName,
