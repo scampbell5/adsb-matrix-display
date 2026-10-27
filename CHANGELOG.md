@@ -1,3 +1,11 @@
+## v8 - Full 8-way compass coverage
+
+- Made all eight compass directions explicit and regression-tested: N, NE, E, SE, S, SW, W, NW.
+- Cardinal directions now have the same arrow treatment as diagonal directions (`↑ → ↓ ←` plus diagonals).
+- Direction arrow and label continue to inherit the distance/proximity color so navigation reads as one status signal.
+- Added renderer examples for all eight directions and a compass preview sheet.
+- Kept the v7 carrier colors, gamified telemetry thresholds, UFO asset, layout, and Portainer-safe Docker build unchanged.
+
 ## v7 - Carrier colors + flight-level gamification
 
 - Added LED-friendly carrier-inspired callsign colors for all bundled airline operators.

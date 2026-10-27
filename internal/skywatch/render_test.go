@@ -135,3 +135,46 @@ func TestCallsignCarrierColors(t *testing.T) {
 		t.Fatalf("GA callsign color = %#v, want cyan", got)
 	}
 }
+
+func TestAllEightCompassDirections(t *testing.T) {
+	cases := map[string][2]int{
+		"N":  {0, -1},
+		"NE": {1, -1},
+		"E":  {1, 0},
+		"SE": {1, 1},
+		"S":  {0, 1},
+		"SW": {-1, 1},
+		"W":  {-1, 0},
+		"NW": {-1, -1},
+	}
+
+	for dir, want := range cases {
+		dx, dy, ok := directionVector(dir)
+		if !ok {
+			t.Fatalf("directionVector(%q) was not recognized", dir)
+		}
+		if dx != want[0] || dy != want[1] {
+			t.Fatalf("directionVector(%q) = (%d,%d), want (%d,%d)", dir, dx, dy, want[0], want[1])
+		}
+
+		model := DisplayModel{
+			Callsign: "N603NH", OperatorCode: "UNK", OperatorKind: OperatorUnknown,
+			Distance: "6.8NM", Direction: dir, Altitude: "5600FT", Speed: "145KT",
+		}
+		b, err := RenderFramePNG(model)
+		if err != nil {
+			t.Fatalf("RenderFramePNG(%s): %v", dir, err)
+		}
+		img, err := png.Decode(bytes.NewReader(b))
+		if err != nil {
+			t.Fatalf("decode %s frame: %v", dir, err)
+		}
+		if img.Bounds().Dx() != FrameWidth || img.Bounds().Dy() != FrameHeight {
+			t.Fatalf("%s frame size = %v", dir, img.Bounds())
+		}
+	}
+
+	if _, _, ok := directionVector("BAD"); ok {
+		t.Fatal("invalid direction unexpectedly recognized")
+	}
+}

@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"adsb-matrix-display/internal/skywatch"
 )
@@ -28,6 +29,15 @@ func main() {
 		"capeair.png":   {Callsign: "KAP2112", Type: "C402", OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: skywatch.OperatorUnknown, LogoURL: "/assets/operators/UNK.png", Distance: "6.8NM", Direction: "S", Altitude: "5600FT", Speed: "145KT"},
 		"overhead.png":  {Callsign: "N603NH", Type: "", OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: skywatch.OperatorUnknown, LogoURL: "/assets/operators/UNK.png", Distance: "0.7NM", Direction: "NW", Altitude: "800FT", Speed: "90KT"},
 		"idle.png":      {Callsign: "ADS-B MATRIX", OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: skywatch.OperatorUnknown, LogoURL: "/assets/operators/UNK.png", Distance: "NO POSITION", Idle: true, Fingerprint: "idle"},
+	}
+
+	// Compass coverage samples: all eight cardinal/intercardinal directions use
+	// the same proximity color as distance so the navigation row reads as one signal.
+	for _, dir := range []string{"N", "NE", "E", "SE", "S", "SW", "W", "NW"} {
+		models["direction_"+strings.ToLower(dir)+".png"] = skywatch.DisplayModel{
+			Callsign: "N603NH", OperatorCode: "UNK", OperatorName: "Unknown", OperatorKind: skywatch.OperatorUnknown,
+			LogoURL: "/assets/operators/UNK.png", Distance: "6.8NM", Direction: dir, Altitude: "5600FT", Speed: "145KT",
+		}
 	}
 
 	for name, model := range models {

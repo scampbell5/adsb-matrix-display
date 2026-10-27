@@ -1,6 +1,6 @@
 # Validation
 
-Final v7 carrier-color + gamified telemetry 64x32 display build.
+Final v8 carrier-color + gamified telemetry + explicit 8-way compass 64x32 display build.
 
 - `go test ./internal/skywatch ./internal/webui ./internal/config` — PASS
 - `go run ./cmd/previewgen` — PASS
@@ -8,6 +8,8 @@ Final v7 carrier-color + gamified telemetry 64x32 display build.
 - Unknown/UFO artwork renders at 14x14; known operator artwork renders at 16x16.
 - Callsign is the only large 5x7 text field; navigation and bottom telemetry use the compact 3x5 font.
 - Callsign, proximity, altitude, and speed colors are data-driven with tested threshold bands.
+- All eight directions (N, NE, E, SE, S, SW, W, NW) are renderer-tested and generated as sample frames.
+- Cardinal and diagonal arrows share the same proximity color as the distance and direction label.
 - Unknown/GA callsigns remain cyan; known carrier callsigns use LED-friendly carrier identity colors.
 - Dockerfile uses Go 1.25 Alpine and builds with `go build -mod=mod`.
 - Dockerfile contains no executable `RUN go mod download` step.

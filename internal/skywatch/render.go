@@ -387,17 +387,30 @@ func compactSpeed(s string) string {
 	return n + " KT"
 }
 
-func drawDirectionArrow(setPixel func(int, int, color.Color), x, y int, direction string, c color.Color) {
+func directionVector(direction string) (int, int, bool) {
 	direction = strings.ToUpper(strings.TrimSpace(direction))
 	vectors := map[string][2]int{
-		"N": {0, -1}, "NE": {1, -1}, "E": {1, 0}, "SE": {1, 1},
-		"S": {0, 1}, "SW": {-1, 1}, "W": {-1, 0}, "NW": {-1, -1},
+		"N":  {0, -1},
+		"NE": {1, -1},
+		"E":  {1, 0},
+		"SE": {1, 1},
+		"S":  {0, 1},
+		"SW": {-1, 1},
+		"W":  {-1, 0},
+		"NW": {-1, -1},
 	}
 	v, ok := vectors[direction]
 	if !ok {
+		return 0, 0, false
+	}
+	return v[0], v[1], true
+}
+
+func drawDirectionArrow(setPixel func(int, int, color.Color), x, y int, direction string, c color.Color) {
+	vx, vy, ok := directionVector(direction)
+	if !ok {
 		return
 	}
-	vx, vy := v[0], v[1]
 	cx, cy := x+2, y+2
 	for i := -2; i <= 2; i++ {
 		setPixel(cx+i*vx, cy+i*vy, c)

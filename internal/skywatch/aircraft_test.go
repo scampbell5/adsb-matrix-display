@@ -16,7 +16,7 @@ func TestHaversineNM(t *testing.T) {
 }
 
 func TestCardinal8(t *testing.T) {
-	cases := map[float64]string{0: "N", 44: "NE", 90: "E", 181: "S", 270: "W", 315: "NW"}
+	cases := map[float64]string{0: "N", 45: "NE", 90: "E", 135: "SE", 180: "S", 225: "SW", 270: "W", 315: "NW", 359: "N"}
 	for deg, want := range cases {
 		if got := Cardinal8(deg); got != want {
 			t.Fatalf("Cardinal8(%v)=%q want %q", deg, got, want)

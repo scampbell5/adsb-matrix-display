@@ -342,15 +342,16 @@ The aircraft frame is intentionally restrained:
 
 - callsign is the only large 5×7 text field
 - known aircraft show only the aircraft type on the secondary row; unknown aircraft leave it blank
-- distance, `NM`, bearing arrow, and direction share one compact cyan 3×5 row
+- distance, `NM`, bearing arrow, and direction share one compact 3×5 row; the whole row inherits the proximity color
 - altitude and speed use compact 3×5 fields on the bottom row (`6.1K FT`, `155 KT`)
 - callsigns use LED-friendly carrier identity colors when the operator/prefix is known; GA/unknown callsigns use UFO cyan
 - distance/bearing is gamified by proximity: cyan (10+ NM), green (5–10), amber (2–5), orange (1–2), magenta (<1 NM)
+- all eight compass directions are explicit: `N ↑`, `NE ↗`, `E →`, `SE ↘`, `S ↓`, `SW ↙`, `W ←`, `NW ↖`; arrow and label use the same proximity color as distance
 - altitude shifts from orange below 1,000 ft → amber below 5,000 → cyan below 10,000 → violet at 10,000+ ft
 - speed shifts from white below 100 kt → green below 250 → cyan below 400 → violet at 400+ kt
 - operator artwork keeps its source colors
 
-`design/operator_pixel_asset_preview.png` is a nearest-neighbor enlarged preview of the embedded source assets. `design/redesign_preview.png` shows enlarged examples of the hybrid 64×32 layouts, including the UFO unknown-aircraft mark. `design/color_gamification_preview.png` shows the current carrier/proximity/altitude/speed color behavior.
+`design/operator_pixel_asset_preview.png` is a nearest-neighbor enlarged preview of the embedded source assets. `design/redesign_preview.png` shows enlarged examples of the hybrid 64×32 layouts, including the UFO unknown-aircraft mark. `design/color_gamification_preview.png` shows the current carrier/proximity/altitude/speed color behavior. `design/compass_preview.png` shows all eight supported compass directions using the live renderer.
 
 ### Display color levels
 
