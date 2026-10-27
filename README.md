@@ -341,12 +341,12 @@ Every runtime icon in `internal/assets/operators/` remains a true 20×20 RGBA PN
 The aircraft frame is intentionally hierarchical:
 
 - callsign is the primary 5×7 field
-- operator/type sits on a compact secondary row
+- airline/military operator and aircraft type use the compact secondary row only when real data exists; unknown aircraft do not show a filler label
 - distance and bearing get the larger middle row
 - altitude and speed share a small explicit-unit telemetry strip (`6.1K FT`, `155 KT`)
 - bearing uses a directional pixel arrow instead of a decorative dash line
 
-`design/operator_pixel_asset_preview.png` is a nearest-neighbor enlarged preview of the embedded source assets. `design/redesign_preview.png` shows enlarged examples of the updated 64×32 layouts.
+`design/operator_pixel_asset_preview.png` is a nearest-neighbor enlarged preview of the embedded source assets. `design/redesign_preview.png` shows enlarged examples of the final hybrid 64×32 layouts, including the restored UFO unknown-aircraft mark.
 
 ## Controller library
 

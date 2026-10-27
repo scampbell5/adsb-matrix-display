@@ -16,7 +16,7 @@ import (
 const FrameWidth = 64
 const FrameHeight = 32
 
-const operatorIconSize = 15
+const operatorIconSize = 18
 
 var (
 	black     = color.RGBA{0, 0, 0, 255}
@@ -48,39 +48,48 @@ func RenderFramePNG(model DisplayModel) ([]byte, error) {
 			return nil, err
 		}
 
-		// Primary identity: preserve up to eight callsign characters at full 5x7 size.
+		// Identity stays prominent without consuming the whole panel. Most callsigns
+		// start to the right of the 18 px operator art; exceptionally long callsigns
+		// shift a few pixels left so all eight characters can still fit.
 		cs := strings.ToUpper(strings.TrimSpace(model.Callsign))
 		if len(cs) > 8 {
 			cs = cs[:8]
 		}
-		drawText5x7(set, 16, 1, cs, white)
+		csX := 20
+		if textWidth5x7(cs) > FrameWidth-csX {
+			csX = FrameWidth - textWidth5x7(cs)
+			if csX < 16 {
+				csX = 16
+			}
+		}
+		drawText5x7(set, csX, 1, cs, white)
 
-		// Secondary identity line. Human-readable short airline names are used when
-		// they fit cleanly; otherwise the compact operator code is used. Aircraft
-		// type is right-aligned so it is easy to find at a glance.
+		// Use the small identity row only when it contains real information. Unknown
+		// aircraft no longer get a generic "AIRCRAFT" label. If we know the type,
+		// show it; airline/military flights can also show the compact operator label.
 		typ := strings.ToUpper(strings.TrimSpace(model.Type))
 		if len(typ) > 4 {
 			typ = typ[:4]
 		}
 		label := shortOperatorLabel(model)
-		if label == "" && typ == "" {
-			label = "AIRCRAFT"
-		}
+		identityX := csX
 		if label != "" {
-			drawText3x5(set, 16, 10, label, muted)
+			drawText3x5(set, identityX, 10, label, muted)
 		}
 		if typ != "" {
-			x := FrameWidth - textWidth3x5(typ)
-			if label == "" {
-				x = 16
+			typeX := identityX
+			if label != "" {
+				typeX = FrameWidth - textWidth3x5(typ)
 			}
-			drawText3x5(set, x, 10, typ, cyanMuted)
+			drawText3x5(set, typeX, 10, typ, cyanMuted)
 		}
 
-		// Spatial information gets the middle row and is intentionally larger than
-		// the telemetry strip. This makes "how close / which way" readable first.
+		// Distance + bearing form one compact navigation row. The value remains easy
+		// to read, while the smaller unit and direction keep it subordinate to the
+		// aircraft identity.
 		distance := compactDistanceValue(model.Distance)
-		distanceEnd := drawText5x7(set, 0, 18, distance, cyan)
+		distanceX := 1
+		distanceEnd := drawText5x7(set, distanceX, 18, distance, cyan)
 		drawText3x5(set, distanceEnd+1, 20, "NM", cyanMuted)
 
 		dir := strings.ToUpper(strings.TrimSpace(model.Direction))
@@ -88,16 +97,16 @@ func RenderFramePNG(model DisplayModel) ([]byte, error) {
 			dir = dir[:2]
 		}
 		if dir != "" && dir != "--" {
-			dirX := FrameWidth - textWidth5x7(dir)
-			drawDirectionArrow(set, dirX-7, 19, dir, cyan)
-			drawText5x7(set, dirX, 18, dir, cyan)
+			dirX := FrameWidth - textWidth3x5(dir)
+			drawDirectionArrow(set, dirX-7, 20, dir, cyan)
+			drawText3x5(set, dirX, 20, dir, cyan)
 		}
 
-		// Bottom telemetry strip. Explicit units are much easier to interpret on a
-		// physical matrix than compressed forms such as "6.1KF".
+		// Bottom telemetry is deliberately simple: altitude left, speed right.
 		drawText3x5(set, 0, 27, compactAltitude(model.Altitude), amber)
 		speed := compactSpeed(model.Speed)
 		drawText3x5(set, FrameWidth-textWidth3x5(speed), 27, speed, white)
+
 	}
 
 	var buf bytes.Buffer

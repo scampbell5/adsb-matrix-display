@@ -13,6 +13,16 @@
 - Restored configurable `HOST_PORT`, `PIAWARE_URL`, and external `ADSB_NETWORK` values in Compose.
 # Changelog
 
+## 2026-10-27 — Final hybrid display pass
+
+- Restored the original UFO-style unknown-aircraft asset.
+- Increased on-screen operator artwork to 18×18 for more personality without returning to the original 20×20-heavy composition.
+- Removed the generic `AIRCRAFT` filler label for unknown/general-aviation targets.
+- Kept the callsign as the primary identity, while tightening the rest of the frame around a compact `distance + bearing` row and explicit `FT` / `KT` telemetry.
+- Airline and military frames retain their operator logo and show operator/type context only when useful.
+- Added updated `N1410A` and `N380F` example frames and refreshed the enlarged design preview.
+- Preserved the v3 Portainer Docker fix: no standalone `go mod download`; dependency resolution remains in `go build -mod=mod`.
+
 ## 2026-10-27 — 64×32 display polish
 
 - Reworked the aircraft frame around a stronger visual hierarchy for the physical P4 panel.
