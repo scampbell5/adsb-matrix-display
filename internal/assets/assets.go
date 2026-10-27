@@ -8,9 +8,9 @@ import (
 )
 
 // Operator icons are original, pixel-friendly identifier marks made for this
-// project. Every icon is exactly 20x20 RGBA and is intended for the 64x32
-// matrix renderer. The renderer currently displays them at 15x15 using
-// nearest-neighbor sampling so the logo remains crisp while leaving more room for data.
+// project. Most operator icons are 20x20 RGBA; the unknown-aircraft UFO is a
+// purpose-built 14x14 pixel asset so it renders 1:1 on the 64x32 panel. Known
+// operator marks are resized with nearest-neighbor sampling.
 //
 //go:embed operators/*.png
 var operatorFS embed.FS

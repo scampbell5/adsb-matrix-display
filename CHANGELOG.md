@@ -1,3 +1,10 @@
+
+## v6 - UFO asset polish
+
+- Replaced the unknown-aircraft artwork with a purpose-built 14x14 flying-saucer icon.
+- Added a flatter silver saucer, cyan window band/lights, and tapered green tractor beam.
+- The renderer still draws unknown aircraft at 14x14, so the new asset is pixel-for-pixel with no resampling.
+
 # Changelog
 
 ## 2026-10-27 — Simplified 64×32 layout
