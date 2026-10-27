@@ -1,0 +1,8 @@
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+README.md
+*_test.go
+adsb-matrix-display

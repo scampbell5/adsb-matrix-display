@@ -1,0 +1,47 @@
+services:
+  adsb-matrix-display:
+    build: .
+    container_name: adsb-matrix-display
+    restart: unless-stopped
+
+    ports:
+      - "${HOST_PORT:-8095}:8080"
+
+    environment:
+      TZ: "${TZ:-UTC}"
+      DISPLAY_NAME: "${DISPLAY_NAME:-ADS-B Matrix}"
+
+      # PiAware/dump1090 source. Because this service joins adsb-net,
+      # it can resolve the existing PiAware container as "piaware".
+      PIAWARE_URL: "${PIAWARE_URL:-http://piaware:8080/data/aircraft.json}"
+      RECEIVER_LAT: "${RECEIVER_LAT}"
+      RECEIVER_LON: "${RECEIVER_LON}"
+      POLL_INTERVAL_SECONDS: "2"
+      PIAWARE_TIMEOUT_SECONDS: "4"
+      MAX_POSITION_AGE_SECONDS: "15"
+      MAX_DISTANCE_NM: "150"
+      MIN_ALTITUDE_FT: "0"
+      INCLUDE_GROUND: "false"
+
+      # Leave blank until the HD-WF2 is on your home Wi-Fi/LAN.
+      WF2_HOST: "${WF2_HOST:-}"
+      WF2_PORT: "10001"
+      WF2_TIMEOUT_SECONDS: "8"
+      WF2_BRIGHTNESS: "35"
+
+      # Start false. The REST API works without the controller.
+      # After manual hardware tests pass, set true in Portainer.
+      PUSH_ENABLED: "${PUSH_ENABLED:-false}"
+      PUSH_INTERVAL_SECONDS: "10"
+      FORCE_REFRESH_SECONDS: "300"
+
+      # Optional. If set, POST endpoints require Authorization: Bearer <token>.
+      API_TOKEN: "${API_TOKEN:-}"
+
+    networks:
+      - adsb-net
+
+networks:
+  adsb-net:
+    external: true
+    name: "${ADSB_NETWORK:-adsb-net}"
