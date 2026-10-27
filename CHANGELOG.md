@@ -1,3 +1,15 @@
+# Changelog
+
+## 2026-10-27 — Simplified 64×32 layout
+
+- Kept the restored UFO at a true 14×14 on-screen size and known operator marks at 16×16.
+- Made the callsign the only large text element on the aircraft frame.
+- Removed the redundant operator-name label; known aircraft show only their type when available.
+- Unified distance, `NM`, bearing arrow, and direction into one compact cyan 3×5 row.
+- Reduced altitude and speed to compact bottom-row fields with explicit `FT` / `KT` units.
+- Limited display text to white, cyan, and amber to reduce visual clutter.
+- Preserved the Portainer-safe Dockerfile with no standalone `RUN go mod download` step.
+
 # Deployment fix v3
 
 - Removed the standalone `RUN go mod download` Docker layer that could fail before the existing `-mod=mod` workaround was reached.

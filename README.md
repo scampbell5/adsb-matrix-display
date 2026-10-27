@@ -336,15 +336,15 @@ POST /api/v1/controller/screen?state=off
 
 ## Pixel assets
 
-Every runtime icon in `internal/assets/operators/` remains a true 20×20 RGBA PNG source asset. The 64×32 renderer now downsizes the selected icon to a crisp 15×15 nearest-neighbor mark so aircraft identity no longer consumes nearly one-third of the screen width.
+Every runtime icon in `internal/assets/operators/` remains a true 20×20 RGBA PNG source asset. On the 64×32 frame, the restored UFO/unknown mark renders at 14×14 and known operator marks render at 16×16 using nearest-neighbor scaling.
 
-The aircraft frame is intentionally hierarchical:
+The aircraft frame is intentionally restrained:
 
-- callsign is the primary 5×7 field
-- airline/military operator and aircraft type use the compact secondary row only when real data exists; unknown aircraft do not show a filler label
-- distance and bearing get the larger middle row
-- altitude and speed share a small explicit-unit telemetry strip (`6.1K FT`, `155 KT`)
-- bearing uses a directional pixel arrow instead of a decorative dash line
+- callsign is the only large 5×7 text field
+- known aircraft show only the aircraft type on the secondary row; unknown aircraft leave it blank
+- distance, `NM`, bearing arrow, and direction share one compact cyan 3×5 row
+- altitude and speed use compact 3×5 fields on the bottom row (`6.1K FT`, `155 KT`)
+- the text palette is limited to white, cyan, and amber; operator artwork keeps its source colors
 
 `design/operator_pixel_asset_preview.png` is a nearest-neighbor enlarged preview of the embedded source assets. `design/redesign_preview.png` shows enlarged examples of the final hybrid 64×32 layouts, including the restored UFO unknown-aircraft mark.
 
