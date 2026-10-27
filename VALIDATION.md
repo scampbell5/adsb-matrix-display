@@ -1,35 +1,49 @@
 # Validation
 
-## Functional checks
+## Completed in this build
 
-- `go test ./internal/skywatch ./internal/webui` passes with network access disabled.
-- Full `go test ./...` passes against a local compatibility implementation of the HD-WF2 library API.
-- Airline-prefix resolution is tested.
-- Military resolution from `dbFlags` is tested.
-- U.S. military ICAO-range fallback is tested.
-- Branch classification from conservative callsign heuristics is tested.
-- Commercial and military 64×32 rendering is tested.
-- Runtime operator assets are true 20×20 PNGs.
-- Generic example frames were regenerated from the current renderer.
+- `go test ./internal/skywatch` passes.
+- Airline prefix resolution tested.
+- Military resolution from `dbFlags` tested.
+- U.S. military ICAO-range fallback tested.
+- Branch classification from conservative callsign heuristics tested.
+- 64×32 commercial render tested.
+- 64×32 military render tested.
+- All runtime operator assets are exactly 20×20 PNGs.
+- Example commercial, military, unknown, and idle frames were regenerated from the current renderer.
+- Huidu controller API usage was checked against the current upstream project documentation/source for:
+  - `UploadFileData`
+  - `FileTypeImage`
+  - `AddProgramWithConfig`
+  - `ImageFitStretch`
+  - `WithAutoReconnect`
+  - screen/brightness controls
 
-## Public-release scrub
+## Environment limitation
 
-The release tree was searched for station-specific branding, personal names, addresses, contact information, exact receiver coordinates, feeder IDs/UUIDs, private IP ranges, tokens, and the prior GitHub-user-specific module path.
+This execution environment cannot reach `proxy.golang.org`, so `go test ./...` cannot download `github.com/alparslanahmed/huidu-led v0.1.7` and therefore cannot complete the controller-package compile here.
 
-Deployment-sensitive values are represented only by environment-variable placeholders.
+The Docker build retains the normal `go mod download` step and will fetch the dependency when built on a host with internet access.
 
-PNG files were checked for embedded textual metadata before packaging.
+## Military-data note
 
-## External dependency note
+readsb documents `dbFlags & 1` as the military bit when an aircraft database is enabled. readsb also identifies known military ICAO ranges, including the U.S. allocation used by this project as a fallback.
 
-The production Docker build uses the pinned `github.com/alparslanahmed/huidu-led` dependency. In an execution environment without outbound Go module access, the full project was compiled/tested using a local API-compatible stub; the source tree itself retains the real dependency and no stub is included in the release ZIP.
+Branch-specific classification is best-effort. When military status is known but branch identity is not, the service intentionally uses the generic `MIL` asset rather than inventing a branch.
 
-## Runtime-branding smoke test
+## Browser simulator validation
 
-A local mock `aircraft.json` feed was served with no controller configured. The service was started with a non-default private runtime name and verified to:
+Validated after adding the built-in `/display` page:
 
-- expose that name through `/api/v1/status`
-- select the expected nearest aircraft
-- serve `/display`
-- return a valid PNG from `/api/v1/display/frame.png`
-- keep the runtime-only private name out of the source tree
+- `go test ./internal/webui ./internal/skywatch` passes.
+- Full project compiles/tests against the local Huidu API compatibility stub.
+- End-to-end smoke test with a mock PiAware feed passed:
+  - `/` returns a 307 redirect to `/display`.
+  - `/display` serves the embedded simulator HTML.
+  - `/api/v1/status` reported two eligible aircraft and selected the nearest aircraft.
+  - `/api/v1/aircraft/military` correctly returned the mock USAF aircraft.
+  - `/api/v1/display/frame.png` returned a 64×32 RGB PNG.
+  - `/assets/operators/UAL.png` returned a 20×20 RGBA PNG.
+- Fixed a Go `http.ServeMux` runtime issue in the previous asset route pattern (`/{code}.png`); the new `{file}` route parses the `.png` suffix safely and starts correctly on modern Go.
+
+The real `huidu-led` module still cannot be downloaded in this execution environment because outbound Go module access is blocked; production Docker builds continue to use the pinned real dependency.

@@ -1,6 +1,11 @@
-FROM golang:1.23-alpine AS build
+FROM golang:1.25-alpine AS build
 RUN apk add --no-cache ca-certificates git
 WORKDIR /src
+
+# Prefer the public Go module proxy, but fall back to fetching directly from
+# the module's source repository on any proxy/network error.
+ENV GOPROXY=https://proxy.golang.org|direct
+
 COPY go.mod ./
 RUN go mod download
 COPY . .

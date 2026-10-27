@@ -1,112 +1,122 @@
-# ADS-B Matrix Display
+# ADS-B Matrix Display Display
 
-A small self-hosted Go service that turns a live ADS-B feed into a 64×32 RGB LED aircraft display. It can run as a browser-only simulator before hardware arrives, then push the same pixel-perfect frame to a Huidu HD-WF2 controller driving a HUB75 panel.
+A small Go service for a 64×32 RGB LED aircraft display driven by a Huidu HD-WF2 controller.
 
-The repository is intentionally deployment-neutral: receiver coordinates, controller addresses, API tokens, timezone, and display branding are supplied at runtime through environment variables and should not be committed to source control.
-
-## What it does
-
-- Reads `aircraft.json` from PiAware/dump1090/readsb-compatible sources.
-- Filters stale or out-of-range positions.
-- Selects the nearest eligible aircraft.
-- Classifies commercial, military, and unknown operators.
-- Detects U.S. military aircraft using database flags, owner/operator metadata, known ICAO ranges, and conservative callsign fallbacks.
-- Uses branch-specific military assets for Air Force, Marines, Coast Guard, Navy, and Army.
-- Renders a true 64×32 PNG frame with a 20×20 operator icon plus flight information.
-- Serves a live browser simulator at `/display`.
-- Pushes frames to an HD-WF2 over TCP when enabled.
-- Exposes a small REST API for status, aircraft data, assets, preview frames, brightness, and screen control.
+It reads live aircraft from PiAware/dump1090, finds the nearest eligible aircraft, classifies the operator (commercial, military, or unknown), renders a pixel-perfect 64×32 PNG, exposes a REST API, and can push the frame to the HD-WF2 over TCP.
 
 ## Architecture
 
 ```text
-ADS-B receiver / PiAware / readsb
-            │ aircraft.json
-            ▼
-     ADS-B Matrix Display
-       ├── REST API
-       ├── operator classification
-       ├── 20×20 pixel assets
-       ├── 64×32 renderer
-       └── browser simulator
-                │
-                │ optional TCP :10001
-                ▼
-             HD-WF2
-                │ HUB75
-                ▼
-          64×32 RGB panel
+PiAware / dump1090
+      │ aircraft.json
+      ▼
+adsb-matrix-display
+      ├── REST API :8095
+      ├── operator / military classification
+      ├── 20×20 pixel assets
+      └── 64×32 PNG renderer
+              │ Wi-Fi/LAN TCP :10001
+              ▼
+           HD-WF2
+              │ HUB75
+              ▼
+        64×32 P4 panel
 ```
 
-## Browser simulator
+The WF2 keeps its factory firmware. This service renders the entire screen image and sends it to the controller.
 
-No controller or LED panel is required to use the preview.
+## What's included
 
-After deployment, open:
+- Nearest-aircraft calculation from receiver coordinates
+- Position age, distance, altitude, and ground filtering
+- Commercial airline detection from ICAO callsign prefixes
+- Military detection from:
+  - readsb `dbFlags` military bit when present
+  - owner/operator metadata (`ownOp`) when present
+  - the U.S. military ICAO allocation range used by readsb
+  - a small conservative callsign fallback for selected U.S. military prefixes
+- Branch-specific military icons for:
+  - U.S. Air Force (`USAF`)
+  - U.S. Marine Corps (`USMC`)
+  - U.S. Coast Guard (`USCG`)
+  - U.S. Navy (`USN`)
+  - U.S. Army (`USA`)
+  - generic military (`MIL`)
+- Fun UFO-style unknown icon (`UNK`)
+- Airline/regional icons for UAL, DAL, AAL, SWA, JBU, ASA, NKS, FFT, AAY, ACA, RPA, EDV, ENY, JIA/PSA, SKW, and AWI
+- Browser/API preview of the exact 64×32 frame
+- Manual and automatic HD-WF2 pushes
+- Brightness and screen on/off controls
+
+## Project layout
 
 ```text
-http://SERVER_IP:8095/display
+.
+├── Dockerfile
+├── docker-compose.yml
+├── go.mod
+├── README.md
+├── VALIDATION.md
+├── cmd/
+│   ├── server/
+│   └── previewgen/
+├── design/
+│   ├── concept_airline_military_grid.png
+│   └── operator_pixel_asset_preview.png
+├── examples/
+│   └── frames/
+│       ├── united.png
+│       ├── delta.png
+│       ├── southwest.png
+│       ├── usaf.png
+│       ├── military.png
+│       ├── unknown.png
+│       └── idle.png
+└── internal/
+    ├── assets/
+    │   └── operators/*.png
+    ├── config/
+    ├── controller/
+    ├── service/
+    ├── skywatch/
+    └── webui/
 ```
-
-The page displays the exact 64×32 PNG that the hardware controller would receive, enlarged with nearest-neighbor rendering. It also shows flight/operator metadata, distance, altitude, speed, aircraft count, and visible military count.
-
-The raw frame is available at:
-
-```text
-http://SERVER_IP:8095/api/v1/display/frame.png
-```
-
-## Public-safe configuration
-
-Copy `.env.example` only as a reference. Keep real deployment values in Portainer, Docker secrets, or an untracked local `.env` file.
-
-Required:
-
-```text
-RECEIVER_LAT=<receiver latitude>
-RECEIVER_LON=<receiver longitude>
-```
-
-Useful optional settings:
-
-```text
-DISPLAY_NAME=ADS-B Matrix
-TZ=UTC
-PIAWARE_URL=http://piaware:8080/data/aircraft.json
-WF2_HOST=
-PUSH_ENABLED=false
-API_TOKEN=
-```
-
-`DISPLAY_NAME` is runtime-only branding. For example, a private deployment can use any station name without adding it to the public repository.
 
 ## Portainer deployment
 
-This project is designed to be deployed as a Git-backed Portainer Stack because the Compose file builds the image from the included Dockerfile and source tree.
-
-By default it expects an existing external Docker network called:
+This stack expects your existing external Docker network:
 
 ```text
 adsb-net
 ```
 
-You can override that network name with `ADSB_NETWORK`.
-
-Recommended Portainer environment variables:
+The service resolves your PiAware container as `piaware` using:
 
 ```text
-DISPLAY_NAME=ADS-B Matrix
-TZ=UTC
+http://piaware:8080/data/aircraft.json
+```
+
+Set these Portainer stack environment variables:
+
+```text
 RECEIVER_LAT=<receiver latitude>
 RECEIVER_LON=<receiver longitude>
 WF2_HOST=
 PUSH_ENABLED=false
-API_TOKEN=<optional long random token>
+API_TOKEN=<optional token>
 ```
 
-Leave `WF2_HOST` empty and `PUSH_ENABLED=false` until the physical controller has been configured and tested.
+Leave `WF2_HOST` empty and `PUSH_ENABLED=false` until the physical display is configured and tested.
 
-## First checks
+Deploy `docker-compose.yml` as a Portainer stack.
+
+The API will be available at:
+
+```text
+http://SERVER_IP:8095
+```
+
+## First API checks
 
 ```bash
 curl http://SERVER_IP:8095/healthz
@@ -115,9 +125,123 @@ curl http://SERVER_IP:8095/api/v1/aircraft/nearest
 curl http://SERVER_IP:8095/api/v1/display/preview
 ```
 
+### Live browser display simulator
+
+The service now includes a full browser-based simulator for the physical 64×32 panel. Open:
+
+```text
+http://SERVER_IP:8095/display
+```
+
+Opening the service root (`http://SERVER_IP:8095/`) redirects there automatically.
+
+The simulator:
+
+- shows the exact 64×32 PNG that will be sent to the HD-WF2
+- enlarges it with nearest-neighbor/pixel rendering so every LED pixel stays crisp
+- optionally overlays a 64×32 LED grid
+- refreshes automatically every 2 seconds
+- shows nearest-flight/operator, distance/direction, altitude/speed, tracked-aircraft count, and military count
+- supports pause/resume and fullscreen mode
+- works with `WF2_HOST` blank and `PUSH_ENABLED=false`, so no display hardware is required
+
+You can still open the raw pixel-perfect frame directly at:
+
+```text
+http://SERVER_IP:8095/api/v1/display/frame.png
+```
+
+## Operator API
+
+All available operator assets:
+
+```text
+GET /api/v1/operators
+```
+
+Commercial-only compatibility endpoint:
+
+```text
+GET /api/v1/airlines
+```
+
+Currently visible military aircraft:
+
+```text
+GET /api/v1/aircraft/military
+```
+
+Individual icon:
+
+```text
+GET /assets/operators/USAF.png
+GET /assets/operators/UAL.png
+GET /assets/operators/UNK.png
+```
+
+The old `/assets/airlines/{code}.png` route remains as a backwards-compatible alias.
+
+## Example aircraft response
+
+Commercial:
+
+```json
+{
+  "hex": "A12345",
+  "callsign": "UAL1827",
+  "operator_code": "UAL",
+  "operator_name": "United",
+  "operator_kind": "airline",
+  "military": false,
+  "operator_detection": "callsign_prefix",
+  "logo_url": "/assets/operators/UAL.png",
+  "distance_nm": 2.8,
+  "direction": "SW"
+}
+```
+
+Military:
+
+```json
+{
+  "hex": "AE1234",
+  "callsign": "RCH421",
+  "operator_code": "USAF",
+  "operator_name": "United States Air Force",
+  "operator_kind": "military",
+  "military": true,
+  "military_branch": "Air Force",
+  "operator_detection": "military_flag+callsign",
+  "logo_url": "/assets/operators/USAF.png"
+}
+```
+
+## Military classification behavior
+
+The service intentionally checks military classification before airline-prefix detection.
+
+Priority:
+
+1. `ownOp` / owner metadata identifies a U.S. military branch.
+2. `dbFlags & 1` indicates military and the callsign can identify a branch.
+3. Known U.S. military ICAO range identifies an aircraft as military; the callsign can optionally identify a branch.
+4. Conservative military callsign heuristics.
+5. Commercial airline prefix.
+6. Unknown (`UNK`).
+
+If the service knows an aircraft is military but cannot identify the branch confidently, it uses `MIL.png` instead of guessing.
+
+### Why some aircraft will show generic `MIL`
+
+Your current PiAware `aircraft.json` may not contain aircraft-database metadata such as `dbFlags` or `ownOp`. The service still recognizes the U.S. military ICAO range, but a hex address alone generally does not tell us Air Force vs Navy vs Army. In that case generic `MIL` is intentional.
+
+A readsb/tar1090 source configured with an aircraft database can expose richer fields (`dbFlags`, registration, owner/operator) and improve branch resolution.
+
 ## HD-WF2 setup
 
-Configure the panel in Huidu LedArt/HDSign first. A typical 64×32 P4 panel configuration is:
+First configure the screen normally using Huidu LedArt/HDSign so the WF2 knows the panel dimensions and scan parameters.
+
+For the purchased panel, the expected configuration is:
 
 ```text
 Width: 64
@@ -127,14 +251,16 @@ Scan: 1/16
 Output: HUB75E / 75EX1
 ```
 
-Put the WF2 in Wi-Fi station mode and give it a stable LAN address. Then set:
+Put the WF2 in Wi-Fi station mode and reserve its IP address in your router.
+
+Then set:
 
 ```text
-WF2_HOST=<controller LAN address>
+WF2_HOST=192.168.x.x
 PUSH_ENABLED=false
 ```
 
-Manual controller test:
+### Manual test
 
 ```bash
 curl -X POST http://SERVER_IP:8095/api/v1/display/test \
@@ -142,16 +268,17 @@ curl -X POST http://SERVER_IP:8095/api/v1/display/test \
   -d '{"text":"ADS-B MATRIX"}'
 ```
 
-Push the current rendered frame:
+If `API_TOKEN` is configured:
 
 ```bash
-curl -X POST http://SERVER_IP:8095/api/v1/display/push
+-H 'Authorization: Bearer YOUR_TOKEN'
 ```
 
-If `API_TOKEN` is set, add:
+Push the current rendered aircraft frame:
 
-```text
-Authorization: Bearer YOUR_TOKEN
+```bash
+curl -X POST http://SERVER_IP:8095/api/v1/display/push \
+  -H 'Authorization: Bearer YOUR_TOKEN'
 ```
 
 After manual testing succeeds:
@@ -160,47 +287,11 @@ After manual testing succeeds:
 PUSH_ENABLED=true
 ```
 
-## Operator and military classification
-
-Classification priority is deliberately conservative:
-
-1. Owner/operator metadata identifies a U.S. military branch.
-2. `dbFlags & 1` identifies a military aircraft; callsign may refine the branch.
-3. Known U.S. military ICAO allocation identifies military status.
-4. A small set of characteristic callsign prefixes is used as a fallback.
-5. Commercial ICAO callsign prefix is checked.
-6. Anything unresolved uses the `UNK` asset.
-
-If military status is known but the branch cannot be determined confidently, the generic `MIL` asset is used instead of guessing.
-
-## Pixel assets
-
-Runtime icons live in:
-
-```text
-internal/assets/operators/
-```
-
-Every runtime asset is a true 20×20 RGBA PNG and is placed directly into the left side of the 64×32 frame without resampling.
-
-Included categories:
-
-- Commercial and regional airlines
-- U.S. Air Force (`USAF`)
-- U.S. Marine Corps (`USMC`)
-- U.S. Coast Guard (`USCG`)
-- U.S. Navy (`USN`)
-- U.S. Army (`USA`)
-- Generic military (`MIL`)
-- Unknown / mystery aircraft (`UNK`)
-
-`design/operator_pixel_asset_preview.png` is an enlarged nearest-neighbor preview of the actual embedded assets.
+The service will then push only when the displayed information changes, with periodic forced refreshes.
 
 ## REST endpoints
 
 ```text
-GET  /
-GET  /display
 GET  /healthz
 GET  /api/v1/status
 GET  /api/v1/aircraft
@@ -219,58 +310,32 @@ POST /api/v1/controller/screen?state=on
 POST /api/v1/controller/screen?state=off
 ```
 
-The old `/assets/airlines/{code}.png` route remains as a compatibility alias.
-
 ## Environment variables
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DISPLAY_NAME` | `ADS-B Matrix` | Runtime display/station name |
-| `TZ` | `UTC` | Container timezone |
-| `PIAWARE_URL` | `http://piaware:8080/data/aircraft.json` | ADS-B JSON source |
+| `PIAWARE_URL` | `http://piaware:8080/data/aircraft.json` | ADS-B JSON feed |
 | `RECEIVER_LAT` | required | Receiver latitude |
 | `RECEIVER_LON` | required | Receiver longitude |
 | `POLL_INTERVAL_SECONDS` | `2` | Feed polling interval |
 | `MAX_POSITION_AGE_SECONDS` | `15` | Reject stale positions |
-| `MAX_DISTANCE_NM` | `150` | Maximum range |
+| `MAX_DISTANCE_NM` | `150` | Maximum display/search range |
 | `MIN_ALTITUDE_FT` | `0` | Minimum altitude |
 | `INCLUDE_GROUND` | `false` | Include aircraft on ground |
-| `WF2_HOST` | empty | HD-WF2 LAN address |
+| `WF2_HOST` | empty | Controller LAN address |
 | `WF2_PORT` | `10001` | Huidu SDK TCP port |
-| `PUSH_ENABLED` | `false` | Automatically push frames |
-| `PUSH_INTERVAL_SECONDS` | `10` | Auto-push evaluation interval |
-| `FORCE_REFRESH_SECONDS` | `300` | Periodic unchanged-frame resend |
-| `WF2_BRIGHTNESS` | `35` | Controller brightness |
-| `API_TOKEN` | empty | Optional authentication for POST endpoints |
-| `HOST_PORT` | `8095` | Host HTTP port in Compose |
-| `ADSB_NETWORK` | `adsb-net` | External Docker network name |
+| `PUSH_ENABLED` | `false` | Automatically update display |
+| `PUSH_INTERVAL_SECONDS` | `10` | Evaluate display push cadence |
+| `FORCE_REFRESH_SECONDS` | `300` | Re-send unchanged frame periodically |
+| `WF2_BRIGHTNESS` | `35` | Preferred brightness |
+| `API_TOKEN` | empty | Optional POST authentication |
 
-## Security and privacy
+## Pixel assets
 
-This service is intended primarily for a trusted LAN.
+Every runtime icon in `internal/assets/operators/` is a true 20×20 RGBA PNG. The frame renderer places the icon directly into the left 20 pixels of the 64×32 frame without resampling.
 
-- Do not commit real receiver coordinates, controller LAN addresses, tokens, or private station branding.
-- `.env` files are ignored by Git.
-- Avoid exposing the HTTP port directly to the public Internet. GET endpoints expose current receiver observations and status information.
-- Use `API_TOKEN` to protect mutating POST endpoints.
-- Keep your exact receiver location in deployment configuration rather than source code.
+`design/operator_pixel_asset_preview.png` is a nearest-neighbor enlarged preview of the actual embedded runtime assets.
 
-See `PRIVACY.md` for the public-repository scrub checklist used for this distribution.
+## Controller library
 
-## Development
-
-Run the internal tests:
-
-```bash
-go test ./internal/skywatch ./internal/webui
-```
-
-Build:
-
-```bash
-go build ./cmd/server
-```
-
-The project uses `github.com/alparslanahmed/huidu-led` for HD-WF2 communication.
-
-The module path in `go.mod` is deliberately neutral (`example.com/adsb-matrix-display`) so this public source package does not encode an individual's GitHub username. It can remain as-is for an application build, or be changed to the repository's final canonical path if desired.
+The controller package uses `github.com/alparslanahmed/huidu-led` and communicates with the HD-WF2 using Huidu SDK 2.0 over TCP port 10001. The rendered frame is uploaded as an in-memory PNG and referenced by a fullscreen image program.
